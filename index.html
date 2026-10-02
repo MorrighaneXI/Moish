@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moish - The Fishing Game</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="Bahan/Logo/Moish.png">
+    <style>
+        /* Extra polish and fatigue vignette styling */
+        #fishing-fatigue-vignette {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 45;
+            background: radial-gradient(circle, transparent 60%, rgba(10, 14, 23, 0.9) 100%);
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .strike {
+            background: linear-gradient(135deg, #ef4444, #f59e0b) !important;
+            animation: pulse 0.5s ease-in-out infinite !important;
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.8) !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="game-container">
+
+        <!-- ── TOAST NOTIFICATION CONTAINER ── -->
+        <div id="toast-container" class="toast-container"></div>
+
+        <!-- ── DAY TRANSITION OVERLAY ── -->
+        <div id="day-transition-overlay" class="day-transition hidden">
+            <h1 id="day-transition-title">Day 1</h1>
+            <p id="day-transition-subtitle">Pantai Sunrise</p>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════════
+         SCREEN 1: MAIN MENU
+         ════════════════════════════════════════════════════════ -->
+        <div id="screen-mainmenu" class="screen active">
+            <div class="menu-overlay">
+                <div class="menu-left-panel">
+                    <div class="menu-brand">
+                        <img src="Bahan/Logo/Moish_Landscape.png" alt="Moish" class="menu-logo">
+                        <h2 class="menu-subtitle" data-i18n="theGame">THE FISHING GAME</h2>
+                    </div>
+
+                    <div class="menu-buttons">
+                        <button class="btn-menu" id="btn-menu-start">
+                            <span class="btn-icon">🎣</span>
+                            <div class="btn-menu-text-wrap">
+                                <span class="btn-menu-title" data-i18n="startGame">Mulai Game</span>
+                            </div>
+                        </button>
+                        <button class="btn-menu btn-menu-continue" id="btn-menu-continue">
+                            <span class="btn-icon btn-icon-continue">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                    <path d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11-6.86a1 1 0 0 0 0-1.72l-11-6.86a1 1 0 0 0-1.5.86z"/>
+                                </svg>
+                            </span>
+                            <div class="btn-menu-text-wrap">
+                                <span class="btn-menu-title" data-i18n="continueGame">Lanjutkan</span>
+                                <span class="btn-menu-subtitle" id="menu-continue-subtitle"></span>
+                            </div>
+                        </button>
+                        <button class="btn-menu" id="btn-menu-load">
+                            <span class="btn-icon">📁</span>
+                            <div class="btn-menu-text-wrap">
+                                <span class="btn-menu-title" data-i18n="loadGame">Muat Game</span>
+                            </div>
+                        </button>
+                        <button class="btn-menu" id="btn-menu-settings">
+                            <span class="btn-icon">⚙️</span>
+                            <div class="btn-menu-text-wrap">
+                                <span class="btn-menu-title" data-i18n="settings">Pengaturan</span>
+                            </div>
+                        </button>
+                        <button class="btn-menu" id="btn-menu-quit">
+                            <span class="btn-icon">🚪</span>
+                            <div class="btn-menu-text-wrap">
+                                <span class="btn-menu-title" data-i18n="quit">Keluar</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+                <div class="menu-version">v1.0.0 • Local Edition</div>
+            </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════════
+         SCREEN 2: SETTINGS
+         ════════════════════════════════════════════════════════ -->
+        <div id="screen-settings" class="screen">
+            <div class="settings-page-wrapper">
+                <!-- Top Header Bar -->
+                <div class="settings-top-header">
+                    <button class="btn-settings-back" id="btn-settings-back">
+                        <span class="back-arrow">←</span>
+                        <span data-i18n="back">Kembali</span>
+                    </button>
+                    <div class="settings-page-title">
+                        <span class="settings-title-icon">⚙</span>
+                        <span data-i18n="settings">Pengaturan</span>
+                    </div>
+                    <div class="settings-header-spacer"></div>
+                </div>
+
+                <!-- 4 Columns Grid -->
+                <div class="settings-cards-grid">
+                    <!-- Column 1: Tampilan -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <span class="card-icon">📺</span>
+                            <span class="card-title" data-i18n="display">Tampilan</span>
+                        </div>
+                        
+                        <div class="settings-item">
+                            <div class="settings-item-label">Mode Layar</div>
+                            <div class="segmented-control" id="seg-display-mode">
+                                <button class="btn-seg btn-setting-display" data-display="fullscreen" data-i18n="fullscreen">Layar Penuh</button>
+                                <button class="btn-seg btn-setting-display active" data-display="windowed" data-i18n="windowed">Berjendela</button>
+                                <button class="btn-seg btn-setting-display" data-display="custom" data-i18n="customSize">Kustom</button>
+                            </div>
+                        </div>
+
+                        <div class="settings-item">
+                            <div class="settings-item-label">Resolusi</div>
+                            <div class="select-wrapper">
+                                <select id="setting-resolution-select" class="setting-select-box">
+                                    <option value="1920x1080">1920 x 1080 (FHD)</option>
+                                    <option value="1600x900">1600 x 900 (HD+)</option>
+                                    <option value="1366x768">1366 x 768</option>
+                                    <option value="1280x720" selected>1280 x 720 (HD)</option>
+                                    <option value="2560x1440">2560 x 1440 (2K)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="settings-item">
+                            <div class="settings-item-label">Kualitas Visual</div>
+                            <div class="segmented-control" id="seg-visual-quality">
+                                <button class="btn-seg btn-setting-quality" data-quality="low">Rendah</button>
+                                <button class="btn-seg btn-setting-quality" data-quality="medium">Sedang</button>
+                                <button class="btn-seg btn-setting-quality active" data-quality="high">Tinggi</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Bahasa -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <span class="card-icon">🌐</span>
+                            <span class="card-title" data-i18n="language">Bahasa</span>
+                        </div>
+
+                        <div class="language-grid" id="language-grid">
+                            <button class="btn-lang" data-lang="en">
+                                <span class="lang-flag">GB</span>
+                                <span class="lang-text">English</span>
+                            </button>
+                            <button class="btn-lang active" data-lang="id">
+                                <span class="lang-flag">ID</span>
+                                <span class="lang-text">Bahasa Indonesia</span>
+                            </button>
+                            <button class="btn-lang" data-lang="zh">
+                                <span class="lang-flag">CN</span>
+                                <span class="lang-text">中文</span>
+                            </button>
+                            <button class="btn-lang" data-lang="ja">
+                                <span class="lang-flag">JP</span>
+                                <span class="lang-text">日本語</span>
+                            </button>
+                            <button class="btn-lang" data-lang="ko">
+                                <span class="lang-flag">KR</span>
+                                <span class="lang-text">한국어</span>
+                            </button>
+                            <button class="btn-lang" data-lang="th">
+                                <span class="lang-flag">TH</span>
+                                <span class="lang-text">ไทย</span>
+                            </button>
+                            <button class="btn-lang" data-lang="ru">
+                                <span class="lang-flag">RU</span>
+                                <span class="lang-text">Русский</span>
+                            </button>
+                            <button class="btn-lang" data-lang="es">
+                                <span class="lang-flag">ES</span>
+                                <span class="lang-text">Español</span>
+                            </button>
+                            <button class="btn-lang" data-lang="fr">
+                                <span class="lang-flag">FR</span>
+                                <span class="lang-text">Français</span>
+                            </button>
+                            <button class="btn-lang" data-lang="de">
+                                <span class="lang-flag">DE</span>
+                                <span class="lang-text">Deutsch</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Column 3: Audio -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <span class="card-icon">🔊</span>
+                            <span class="card-title" data-i18n="audio">Audio</span>
+                        </div>
+
+                        <div class="settings-slider-item">
+                            <div class="slider-header">
+                                <span class="slider-label" data-i18n="master">Volume Master</span>
+                                <span class="slider-percent" id="val-master-volume">80%</span>
+                            </div>
+                            <input type="range" class="custom-range" id="slider-master-volume" min="0" max="100" value="80">
+                        </div>
+
+                        <div class="settings-slider-item">
+                            <div class="slider-header">
+                                <span class="slider-label" data-i18n="music">BGM</span>
+                                <span class="slider-percent" id="val-bgm-volume">60%</span>
+                            </div>
+                            <input type="range" class="custom-range" id="slider-bgm-volume" min="0" max="100" value="60">
+                        </div>
+
+                        <div class="settings-slider-item">
+                            <div class="slider-header">
+                                <span class="slider-label" data-i18n="sfx">SFX</span>
+                                <span class="slider-percent" id="val-sfx-volume">90%</span>
+                            </div>
+                            <input type="range" class="custom-range" id="slider-sfx-volume" min="0" max="100" value="90">
+                        </div>
+
+                        <div class="settings-slider-item">
+                            <div class="slider-header">
+                                <span class="slider-label">Suara</span>
+                                <span class="slider-percent" id="val-voice-volume">70%</span>
+                            </div>
+                            <input type="range" class="custom-range" id="slider-voice-volume" min="0" max="100" value="70">
+                        </div>
+                    </div>
+
+                    <!-- Column 4: Kontrol -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <span class="card-icon">🎮</span>
+                            <span class="card-title" data-i18n="controls">Kontrol</span>
+                        </div>
+
+                        <div class="settings-slider-item">
+                            <div class="slider-header">
+                                <span class="slider-label">Sensitivitas Kail</span>
+                                <span class="slider-percent" id="val-sensitivity">40%</span>
+                            </div>
+                            <input type="range" class="custom-range" id="slider-sensitivity" min="10" max="100" value="40">
+                        </div>
+
+                        <div class="settings-toggle-item">
+                            <span class="toggle-label">Auto Lempar</span>
+                            <label class="custom-checkbox">
+                                <input type="checkbox" id="checkbox-auto-cast">
+                                <span class="checkbox-box"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-toggle-item">
+                            <span class="toggle-label">Tampilkan Timer</span>
+                            <label class="custom-checkbox">
+                                <input type="checkbox" id="checkbox-show-timer" checked>
+                                <span class="checkbox-box"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Save Button -->
+                <div class="settings-bottom-bar">
+                    <button class="btn-save-settings" id="btn-save-settings">
+                        <span class="save-icon">💾</span>
+                        <span>Simpan Pengaturan</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════════
+         SCREEN 3: STORY / PROLOGUE WITH VOICE
+         ════════════════════════════════════════════════════════ -->
+        <div id="screen-story" class="screen">
+            <div class="story-container">
+                <button class="story-skip-btn" id="btn-story-skip" data-i18n="skipStory">Lewati Cerita</button>
+                <div class="story-text-area" id="story-text-area"></div>
+            </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════════
+         SCREEN 4: FISHING SCREEN
+         ════════════════════════════════════════════════════════ -->
+        <div id="screen-fishing" class="screen">
+            <!-- Sky & Sun/Moon -->
+            <div class="fishing-sky day" id="fishing-sky"></div>
+            <div class="fishing-sun" id="fishing-sun"></div>
+
+            <!-- Weather Particles & Lightning/Fog -->
+            <div class="particle-container" id="weather-particles-container"></div>
+            <div id="fishing-fatigue-vignette"></div>
+
+            <!-- Water & Waves -->
+            <div class="fishing-water">
+                <div class="water-surface"></div>
+                <div class="water-wave"></div>
+            </div>
+
+            <!-- Fishing Line & Rod -->
+            <div class="fishing-line-container">
+                <span class="fishing-rod-icon">🎣</span>
+                <div class="fishing-line" id="fishing-line">
+                    <span class="fishing-hook" id="fishing-hook">🪝</span>
+                </div>
+            </div>
+
+            <!-- HUD -->
+            <div class="fishing-hud">
+                <div class="hud-left">
+                    <div class="hud-day" id="hud-day">Hari 1</div>
+                    <div class="hud-item">
+                        <span class="icon">💪</span>
+                        <div class="hud-bar">
+                            <div class="hud-bar-fill stamina" id="hud-stamina-fill" style="width: 100%;"></div>
+                        </div>
+                        <span id="hud-stamina-val" style="font-size: 11px;">100/100</span>
+                    </div>
+                    <div class="hud-item">
+                        <span class="icon">⭐</span>
+                        <div class="hud-bar">
+                            <div class="hud-bar-fill exp" id="hud-exp-fill" style="width: 0%;"></div>
+                        </div>
+                        <span id="hud-level-val" style="font-size: 11px;">Lv. 1</span>
+                    </div>
+                </div>
+
+                <div class="hud-center">
+                    <div class="hud-time" id="hud-time">08:00</div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <span class="hud-weather" id="hud-weather" title="Cuaca">☀️</span>
+                        <span id="hud-map-name"
+                            style="font-size: 12px; color: var(--accent-gold); font-weight: 600;">Pantai Sunrise</span>
+                    </div>
+                </div>
+
+                <div class="hud-right">
+                    <div class="hud-item" style="justify-content: flex-end;">
+                        <span style="font-weight: 700; color: var(--accent-gold);" id="hud-coins-val">100</span>
+                        <span class="icon">💰</span>
+                    </div>
+                    <div class="hud-item" style="justify-content: flex-end;">
+                        <span style="font-weight: 600;" id="hud-bag-val">0/10</span>
+                        <span class="icon">🎒</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timing Minigame Bar -->
+            <div class="timing-bar-container" id="timing-minigame">
+                <div class="timing-label" data-i18n="fishCaught">Ikan Menarik Kail!</div>
+                <div class="timing-bar">
+                    <div class="timing-zone" style="left: 35%; width: 40%;"></div>
+                    <div class="timing-perfect-zone" style="left: 48%; width: 14%;"></div>
+                    <div class="timing-indicator" id="timing-indicator" style="left: 10%;"></div>
+                </div>
+                <div class="timing-instruction">Klik STRIKE atau tekan SPASI saat indikator di zona hijau!</div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="fishing-actions">
+                <button class="btn-fish cast" id="btn-cast-line" data-i18n="castLine">Lempar Pancing 🎣</button>
+                <button class="btn-fish home" id="btn-go-home" data-i18n="goHome">Kembali ke Rumah 🏠</button>
+            </div>
+
+            <!-- Combo Display -->
+            <div class="combo-display" id="combo-display" style="display: none;">
+                <div class="combo-number" id="combo-num">2x</div>
+                <div class="combo-label">COMBO</div>
+            </div>
+
+            <!-- Catch Result Popup -->
+            <div class="catch-popup" id="catch-popup">
+                <div class="catch-card" id="catch-card">
+                    <!-- Injected via JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════════
+         SCREEN 5: HOME SCREEN
+         ════════════════════════════════════════════════════════ -->
+        <div id="screen-home" class="screen">
+            <div class="home-container">
+                <div class="home-header">
+                    <h2>Pondok Nelayan 🏠</h2>
+                    <p>Istirahat, simpan ikan ke akuarium, jual hasil tangkapan, atau tingkatkan perlengkapanmu!</p>
+                </div>
+
+                <!-- Stats Bar -->
+                <div class="home-stats-bar">
+                    <div class="home-stat">
+                        <span class="icon">📅</span>
+                        <span class="val" id="home-stat-day">Hari 1</span>
+                    </div>
+                    <div class="home-stat">
+                        <span class="icon">💪</span>
+                        <span class="val" id="home-stat-stamina">100/100</span>
+                    </div>
+                    <div class="home-stat">
+                        <span class="icon">💰</span>
+                        <span class="val" id="home-stat-coins">100</span> Koin
+                    </div>
+                    <div class="home-stat">
+                        <span class="icon">🎒</span>
+                        <span class="val" id="home-stat-bag">0/10</span> Ikan
+                    </div>
+                    <div class="home-stat">
+                        <span class="icon">⭐</span>
+                        <span class="val" id="home-stat-level">Lv. 1</span>
+                    </div>
+                    <div class="home-stat" style="border-color: var(--accent-blue);">
+                        <img id="home-char-img" src="Bahan/Characters/Chloe.png" alt="Char"
+                            style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
+                        <span class="val" id="home-char-name" style="color: var(--text-accent);">Nelayan</span>
+                    </div>
+                </div>
+
+                <!-- Action Grid -->
+                <div class="home-grid">
+                    <div class="home-btn" id="home-btn-sleep">
+                        <span class="icon">🛏️</span>
+                        <span class="label" data-i18n="sleep">Tidur</span>
+                        <span class="desc">Pulihkan stamina & mulai hari baru</span>
+                    </div>
+
+                    <div class="home-btn" id="home-btn-sell">
+                        <span class="icon">💰</span>
+                        <span class="label" data-i18n="sellFish">Jual Ikan</span>
+                        <span class="desc">Tukar tangkapan dengan koin</span>
+                    </div>
+
+                    <div class="home-btn" id="home-btn-store">
+                        <span class="icon">🐟</span>
+                        <span class="label" data-i18n="storeFish">Simpan Ikan</span>
+                        <span class="desc">Pindahkan ikan ke akuarium</span>
+                    </div>
+
+                    <div class="home-btn" id="home-btn-upgrade">
+                        <span class="icon">⚙️</span>
+                        <span class="label" data-i18n="upgrade">Upgrade</span>
+                        <span class="desc">Tingkatkan pancing, stamina, luck</span>
+                    </div>
+
+                    <div class="home-btn" id="home-btn-char">
+                        <span class="icon">👥</span>
+                        <span class="label" data-i18n="changeCharacter">Ganti Karakter / Toko</span>
+                        <span class="desc">Rekrut nelayan dengan skill unik</span>
+                    </div>
+
+                    <div class="home-btn" id="home-btn-aquarium">
+                        <span class="icon">🌊</span>
+                        <span class="label" data-i18n="aquarium">Akuarium</span>
+                        <span class="desc">Lihat koleksi ikan hidupmu</span>
+                    </div>
+
+                    <div class="home-btn" id="home-btn-map">
+                        <span class="icon">🗺️</span>
+                        <span class="label" data-i18n="selectMap">Pilih Map</span>
+                        <span class="desc">Buka 8 spot memancing baru</span>
+                    </div>
+
+                    <div class="home-btn" id="home-btn-collection">
+                        <span class="icon">📖</span>
+                        <span class="label" data-i18n="collection">Ensiklopedia</span>
+                        <span class="desc">Katalog 120 ikan & mutasi</span>
+                    </div>
+
+                    <div class="home-btn" id="home-btn-achievements">
+                        <span class="icon">🏆</span>
+                        <span class="label" data-i18n="achievements">Penghargaan</span>
+                        <span class="desc">Capai target & klaim koin</span>
+                    </div>
+
+                    <div class="home-btn" id="home-btn-savegame">
+                        <span class="icon">💾</span>
+                        <span class="label" data-i18n="saveGame">Simpan Game</span>
+                        <span class="desc">Simpan progres ke slot</span>
+                    </div>
+
+                    <div class="home-btn" id="home-btn-fish-again"
+                        style="grid-column: 1/-1; background: linear-gradient(135deg, rgba(14, 165, 233, 0.4), rgba(56, 189, 248, 0.2)); border-color: var(--accent-blue);">
+                        <span class="icon">🎣</span>
+                        <span class="label" style="font-size: 16px; color: var(--accent-blue);">Kembali Melaut</span>
+                        <span class="desc">Lanjutkan memancing di laut</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════════
+         MODALS
+         ════════════════════════════════════════════════════════ -->
+
+        <!-- Modal: Sell Fish -->
+        <div class="modal-overlay" id="modal-sell">
+            <div class="modal-panel">
+                <div class="modal-header">
+                    <h3 data-i18n="sellFish">Jual Ikan 💰</h3>
+                    <button class="modal-close">✕</button>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div class="btn-group" style="margin-top: 0;">
+                        <button class="btn btn-primary" id="btn-sell-select-all" data-i18n="selectAll">Pilih
+                            Semua</button>
+                        <button class="btn" id="btn-sell-deselect-all" data-i18n="deselectAll">Hapus Semua</button>
+                    </div>
+                    <div style="font-size: 14px;">
+                        <span data-i18n="totalSell">Total Penjualan:</span>
+                        <span style="font-weight: 700; color: var(--accent-gold); font-size: 18px;"
+                            id="sell-total-coins">0</span> Koin
+                    </div>
+                </div>
+                <div class="fish-list" id="sell-fish-list"></div>
+                <div class="btn-group" style="margin-top: 20px;">
+                    <button class="btn btn-gold" id="btn-sell-confirm" data-i18n="sellFish">Jual Ikan Terpilih</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Store Fish -->
+        <div class="modal-overlay" id="modal-store">
+            <div class="modal-panel">
+                <div class="modal-header">
+                    <h3 data-i18n="storeFish">Simpan Ikan ke Akuarium 🐟</h3>
+                    <button class="modal-close">✕</button>
+                </div>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">Pilih ikan dari tas untuk
+                    dipelihara di akuarium pribadimu:</p>
+                <div class="fish-list" id="store-fish-list"></div>
+                <div class="btn-group" style="margin-top: 20px;">
+                    <button class="btn btn-primary" id="btn-store-confirm" data-i18n="storeFish">Simpan ke
+                        Akuarium</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Aquarium -->
+        <div class="modal-overlay" id="modal-aquarium">
+            <div class="modal-panel">
+                <div class="modal-header">
+                    <h3 data-i18n="aquarium">Akuarium Pribadi 🌊</h3>
+                    <button class="modal-close">✕</button>
+                </div>
+                <div class="aquarium-grid" id="aquarium-grid"></div>
+            </div>
+        </div>
+
+        <!-- Modal: Upgrades -->
+        <div class="modal-overlay" id="modal-upgrade">
+            <div class="modal-panel">
+                <div class="modal-header">
+                    <h3 data-i18n="upgrade">Upgrade Alat & Karakter ⚙️</h3>
+                    <button class="modal-close">✕</button>
+                </div>
+                <div class="upgrade-grid" id="upgrade-grid"></div>
+            </div>
+        </div>
+
+        <!-- Modal: Characters -->
+        <div class="modal-overlay" id="modal-characters">
+            <div class="modal-panel" style="width: min(92vw, 850px);">
+                <div class="modal-header">
+                    <h3 data-i18n="changeCharacter">Ganti Karakter & Toko Nelayan 👥</h3>
+                    <button class="modal-close">✕</button>
+                </div>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">Beli karakter baru dengan
+                    skill pasif memancing yang kuat dan tingkatkan keahlian mereka:</p>
+                <div class="char-grid" id="char-grid"></div>
+            </div>
+        </div>
+
+        <!-- Modal: Maps -->
+        <div class="modal-overlay" id="modal-maps">
+            <div class="modal-panel">
+                <div class="modal-header">
+                    <h3 data-i18n="selectMap">Pilih Spot Memancing 🗺️</h3>
+                    <button class="modal-close">✕</button>
+                </div>
+                <div class="map-grid" id="map-grid"></div>
+            </div>
+        </div>
+
+        <!-- Modal: Collection -->
+        <div class="modal-overlay" id="modal-collection">
+            <div class="modal-panel" style="width: min(92vw, 850px);">
+                <div class="modal-header">
+                    <div>
+                        <h3 data-i18n="collection">Ensiklopedia Laut 📖</h3>
+                        <div id="collection-count" style="font-size: 12px; color: var(--accent-gold); margin-top: 4px;">
+                            Ditemukan: 0 / 120</div>
+                    </div>
+                    <button class="modal-close">✕</button>
+                </div>
+                <div class="fish-list" id="collection-fish-list"></div>
+            </div>
+        </div>
+
+        <!-- Modal: Achievements -->
+        <div class="modal-overlay" id="modal-achievements">
+            <div class="modal-panel">
+                <div class="modal-header">
+                    <h3 data-i18n="achievements">Penghargaan 🏆</h3>
+                    <button class="modal-close">✕</button>
+                </div>
+                <div class="achievement-list" id="achievements-list"></div>
+            </div>
+        </div>
+
+        <!-- Modal: Save / Load -->
+        <div class="modal-overlay" id="modal-saveload">
+            <div class="modal-panel">
+                <div class="modal-header">
+                    <h3 id="saveload-title" data-i18n="savedGames">Game Tersimpan 💾</h3>
+                    <button class="modal-close">✕</button>
+                </div>
+                <div class="save-list" id="save-slots-list"></div>
+            </div>
+        </div>
+
+        <!-- Modal: Weather Picker (Sarah Skill) -->
+        <div class="modal-overlay" id="modal-weather-picker">
+            <div class="modal-panel">
+                <div class="modal-header">
+                    <h3 data-i18n="chooseWeather">Skill Sarah: Pilih Cuaca Hari Ini 🌤️</h3>
+                    <button class="modal-close">✕</button>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;"
+                    id="weather-picker-grid"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── SCRIPTS ── -->
+    <script src="js/data.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/ui.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            game.init();
+            ui.init();
+            ui.showScreen('mainmenu');
+        });
+    </script>
+</body>
+
+</html>
